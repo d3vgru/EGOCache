@@ -54,11 +54,14 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 
 @implementation EGOCache
 
-+ (instancetype)currentCache {
+@synthesize defaultTimeoutInterval;
+@synthesize frozenCacheInfo;
+
++ (EGOCache*)currentCache {
 	return [self globalCache];
 }
 
-+ (instancetype)globalCache {
++ (EGOCache*)globalCache {
 	static id instance;
 	
 	static dispatch_once_t onceToken;
@@ -71,7 +74,7 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 }
 
 - (id)init {
-	NSString* cachesDirectory = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES)[0];
+	NSString* cachesDirectory = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 	NSString* oldCachesDirectory = [[[cachesDirectory stringByAppendingPathComponent:[[NSProcessInfo processInfo] processName]] stringByAppendingPathComponent:@"EGOCache"] copy];
 
 	if([[NSFileManager defaultManager] fileExistsAtPath:oldCachesDirectory]) {
@@ -112,7 +115,7 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 		NSMutableArray* removedKeys = [[NSMutableArray alloc] init];
 		
 		for(NSString* key in _cacheInfo) {
-			if([_cacheInfo[key] timeIntervalSinceReferenceDate] <= now) {
+			if([[_cacheInfo objectForKey:key] timeIntervalSinceReferenceDate] <= now) {
 				[[NSFileManager defaultManager] removeItemAtPath:cachePathForKey(_directory, key) error:NULL];
 				[removedKeys addObject:key];
 			}
@@ -155,7 +158,7 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 	__block NSDate* date = nil;;
 	
 	dispatch_sync(_frozenCacheInfoQueue, ^{
-		date = (self.frozenCacheInfo)[key];
+		date = [(self.frozenCacheInfo) objectForKey:key];
 	});
 	
 	if(!date) return NO;
@@ -172,7 +175,7 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 		NSMutableDictionary* info = [self.frozenCacheInfo mutableCopy];
 		
 		if(date) {
-			info[key] = date;
+			[info setValue:date forKey:key];
 		} else {
 			[info removeObjectForKey:key];
 		}
@@ -184,7 +187,7 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 	// Save the final copy (this may be blocked by other operations)
 	dispatch_async(_cacheInfoQueue, ^{
 		if(date) {
-			_cacheInfo[key] = date;
+			[_cacheInfo setValue:date forKey:key];
 		} else {
 			[_cacheInfo removeObjectForKey:key];
 		}
@@ -363,8 +366,5 @@ static inline NSString* cachePathForKey(NSString* directory, NSString* key) {
 
 #pragma mark -
 
-- (void)dealloc {
-
-}
 
 @end

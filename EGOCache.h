@@ -32,10 +32,10 @@
 
 @interface EGOCache : NSObject
 
-+ (instancetype)currentCache __deprecated; // Renamed to globalCache
++ (EGOCache*)currentCache __deprecated; // Renamed to globalCache
 
 // Global cache for easy use
-+ (instancetype)globalCache;
++ (EGOCache*)globalCache;
 
 // Opitionally create a different EGOCache instance with it's own cache directory
 - (id)initWithCacheDirectory:(NSString*)cacheDirectory;
@@ -73,6 +73,9 @@
 - (id<NSCoding>)objectForKey:(NSString*)key;
 - (void)setObject:(id<NSCoding>)anObject forKey:(NSString*)key;
 - (void)setObject:(id<NSCoding>)anObject forKey:(NSString*)key withTimeoutInterval:(NSTimeInterval)timeoutInterval;
+
+- (void)setCacheTimeoutInterval:(NSTimeInterval)timeoutInterval forKey:(NSString*)key;
+- (void)setNeedsSave;
 
 @property(nonatomic,assign) NSTimeInterval defaultTimeoutInterval; // Default is 1 day
 @end
